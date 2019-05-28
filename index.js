@@ -33,11 +33,11 @@ let persons = [
     }
 ]
 
-app.get('/persons', (req, res) => {
+app.get('/api/persons', (req, res) => {
     res.json(persons)
 })
 
-app.get('/persons/:id', (req, res) => {
+app.get('/api/persons/:id', (req, res) => {
     const id = Number(req.params.id)
     const person = persons.find(p => p.id === id)
     if (!person) {
@@ -46,7 +46,7 @@ app.get('/persons/:id', (req, res) => {
     res.json(person)
 })
 
-app.delete('/persons/:id', (req, res) => {
+app.delete('/api/persons/:id', (req, res) => {
     const id = Number(req.params.id)
     const person = persons.find(p => p.id === id)
     console.log(person)
@@ -60,7 +60,7 @@ app.delete('/persons/:id', (req, res) => {
     res.end()
 })
 
-app.post('/persons', (req, res) => {
+app.post('/api/persons', (req, res) => {
     const newPerson = req.body
     if (persons.find(p => p.name === newPerson.name)) {
         return res.status(400).json({ error: 'Name must be unique' })
