@@ -46,13 +46,3 @@ person.save().then(res => {
     console.log(`Lisättiin ${res.name} numero ${res.number} luetteloon`)
     mongoose.connection.close()
 })
-// const note = new Note ({
-//     content: 'muistiinpano',
-//     date: new Date(),
-//     important: true
-// })
-
-// note.save().then(res => {
-//     console.log('note saved', res)
-//     mongoose.connection.close()
-// })

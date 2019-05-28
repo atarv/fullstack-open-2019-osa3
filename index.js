@@ -12,6 +12,17 @@ app.use(bodyParser.json())
 morgan.token('body', (req, res) => JSON.stringify(req.body))
 
 app.use(morgan(':method :url :status :res[content-length] :response-time ms :body'))
+
+const errorHandler = (error, request, response, next) => {
+    console.error(error.message)
+    if (error.name === 'CaseError' && error.kind == 'ObjectId') {
+        return response.statu(400).send({ error: 'malformatted id' })
+    }
+    next(error)
+}
+
+app.use(errorHandler)
+
 let persons = [
     {
         id: 1,
@@ -38,16 +49,19 @@ let persons = [
 app.use(express.static('build'))
 
 app.get('/api/persons', (req, res) => {
-    res.json(persons)
+    Person.find({}).then(persons => {
+        res.json(persons)
+    })
 })
 
-app.get('/api/persons/:id', (req, res) => {
-    const id = Number(req.params.id)
-    const person = persons.find(p => p.id === id)
-    if (!person) {
-        return res.status(404).end()
-    }
-    res.json(person)
+app.get('/api/persons/:id', (req, res, next) => {
+    const id = req.params.id
+    Person.findById(id)
+        .then(person => {
+            if (person) res.json(person.toJSON())
+            else res.status(404).end()
+        })
+        .catch(err => next(err))
 })
 
 app.delete('/api/persons/:id', (req, res) => {
@@ -65,17 +79,21 @@ app.delete('/api/persons/:id', (req, res) => {
 })
 
 app.post('/api/persons', (req, res) => {
-    const newPerson = req.body
-    if (persons.find(p => p.name === newPerson.name)) {
-        return res.status(400).json({ error: 'Name must be unique' })
-    } else if (!newPerson.name || !newPerson.number) {
+    const body = req.body
+    // if (persons.find(p => p.name === newPerson.name)) {
+    //     return res.status(400).json({ error: 'Name must be unique' })
+    if (!body.name || !body.number) {
         return res.status(400).json({ error: 'Person must have both a name and a number' })
     }
 
-    const newId = Math.ceil(Math.random() * 9000000)
-    newPerson.id = newId
-    persons = persons.concat(newPerson)
-    res.json(newPerson)
+    const newPerson = new Person({
+        name: body.name,
+        number: body.number
+    })
+
+    newPerson.save().then(saved => {
+        res.json(saved.toJSON())
+    })
 })
 
 app.get('/info', (req, res) => {
