@@ -13,7 +13,7 @@ morgan.token('body', (req, res) => JSON.stringify(req.body))
 
 app.use(morgan(':method :url :status :res[content-length] :response-time ms :body'))
 
-// Middleware
+// Error handling middleware
 const errorHandler = (error, request, response, next) => {
     console.error(error.message)
     if (error.name === 'CaseError' && error.kind == 'ObjectId') {
@@ -21,7 +21,6 @@ const errorHandler = (error, request, response, next) => {
     }
     next(error)
 }
-
 app.use(errorHandler)
 
 // Serve front-end
@@ -30,6 +29,7 @@ app.use(express.static('build'))
 // API calls
 const baseUrl = '/api/persons'
 
+/* Get all persons */
 app.get(baseUrl, (req, res, next) => {
     Person.find({})
         .then(persons => {
@@ -38,6 +38,7 @@ app.get(baseUrl, (req, res, next) => {
         .catch(err => next(err))
 })
 
+/* Get person with id */
 app.get(`${baseUrl}/:id`, (req, res, next) => {
     const id = req.params.id
     Person.findById(id)
@@ -48,6 +49,7 @@ app.get(`${baseUrl}/:id`, (req, res, next) => {
         .catch(err => next(err))
 })
 
+/* Update person's data */
 app.put(`${baseUrl}/:id`, (req, res, next) => {
     const id = req.params.id
     const body = req.body
@@ -60,6 +62,7 @@ app.put(`${baseUrl}/:id`, (req, res, next) => {
         .catch(err => next(err))
 })
 
+/* Delete person with id */
 app.delete(`${baseUrl}/:id`, (req, res, next) => {
     const id = req.params.id
 
@@ -68,7 +71,8 @@ app.delete(`${baseUrl}/:id`, (req, res, next) => {
         .catch(err => next(err))
 })
 
-app.post(baseUrl, (req, res) => {
+/* Create a new person */
+app.post(baseUrl, (req, res, next) => {
     const body = req.body
     if (!body.name || !body.number) {
         return res.status(400).json({ error: 'Person must have both a name and a number' })
@@ -79,11 +83,15 @@ app.post(baseUrl, (req, res) => {
         number: body.number
     })
 
-    newPerson.save().then(saved => {
-        res.json(saved.toJSON())
-    })
+    newPerson
+        .save()
+        .then(saved => {
+            res.json(saved.toJSON())
+        })
+        .catch(err => next(err))
 })
 
+/* Info page */
 app.get('/info', (req, res) => {
     const date = new Date()
     let persons = NaN
@@ -93,7 +101,7 @@ app.get('/info', (req, res) => {
         .finally(() => res.send(`<p>Puhelinluettelossa on ${persons} nimeä</p><p>${date}</p>`))
 })
 
-const PORT = process.env.PORT || 3001
+const PORT = process.env.PORT || 3001 // If PORT is not specified, use right hand side
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`)
 })
